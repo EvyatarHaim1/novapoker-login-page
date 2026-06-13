@@ -418,6 +418,8 @@
     <script>
         // Configuration
         var SUPABASE_URL = 'https://auth.novapoker.app';
+        // Apple Sign In stays on the ORIGINAL *.supabase.co domain (see loginWithApple).
+        var APPLE_SUPABASE_URL = 'https://dtjqoxdqpdcxrcqwskuu.supabase.co';
         var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0anFveGRxcGRjeHJjcXdza3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NTM1NjcsImV4cCI6MjA4MTAyOTU2N30.7SnUPGhtSkmaML_wDx_smmtrGyS4qiNHFk977_2YZ34';
         var UNITY_CALLBACK = 'novapoker://callback';
 
@@ -655,7 +657,15 @@
                 return;
             }
 
-            supabaseClient.auth.signInWithOAuth({
+            // Apple Sign In is initiated through the ORIGINAL *.supabase.co domain, NOT
+            // the auth.novapoker.app custom domain: the Apple Service ID only has the
+            // supabase.co callback registered, and Apple's consent screen shows the app
+            // name (not the redirect domain), so the custom domain adds no branding
+            // benefit and just yields "Invalid web redirect url". Google keeps the
+            // branded custom domain (SUPABASE_URL). Returned tokens are project-wide and
+            // get processed by the main supabaseClient in handleOAuthCallback.
+            var appleClient = window.supabase.createClient(APPLE_SUPABASE_URL, SUPABASE_ANON_KEY);
+            appleClient.auth.signInWithOAuth({
                 provider: 'apple',
                 options: {
                     redirectTo: window.location.origin + window.location.pathname
